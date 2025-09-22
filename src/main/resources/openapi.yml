@@ -1,0 +1,139 @@
+openapi: 3.0.3
+info:
+  title: Asset Manager
+  description: |-
+    This API definition describes asset (pictures, videos) management operations.
+  contact:
+    email: the.asset.manager@inditex.com
+  version: 1.0.0
+tags:
+  - name: asset
+paths:
+  /api/mgmt/1/assets/actions/upload:
+    post:
+      tags:
+        - asset
+      summary: Performs an upload of the requested asset file.
+      description: Performs an upload of the requested asset file.
+      operationId: uploadAssetFile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetFileUploadRequest'
+        required: true
+      responses:
+        '202':
+          description: The operation was accepted by the backend.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetFileUploadResponse'
+        '500':
+          description: An unexpected error occurred.
+  /api/mgmt/1/assets/:
+    get:
+      tags:
+        - asset
+      summary: Allows searching (& filtering) all the uploaded/registered assets.
+      description: Allows searching (& filtering) all the uploaded/registered assets.
+      operationId: getAssetsByFilter
+      parameters:
+        - $ref: '#/components/parameters/UploadDateStart'
+        - $ref: '#/components/parameters/UploadDateEnd'
+        - $ref: '#/components/parameters/Filename'
+        - $ref: '#/components/parameters/Filetype'
+        - $ref: '#/components/parameters/SortDirection'
+      responses:
+        '200':
+          description: Returns a list of assets matching the specified criteria.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Asset'
+        '400':
+          description: Malformed request.
+        '500':
+          description: An unexpected error occurred.
+components:
+  parameters:
+    UploadDateStart:
+      in: query
+      name: uploadDateStart
+      description: The start date for the range.
+      schema:
+        type: string
+    UploadDateEnd:
+      in: query
+      name: uploadDateEnd
+      description: The end date for the range.
+      schema:
+        type: string
+    Filename:
+      in: query
+      name: filename
+      description: The filename expression for file filtering (regex).
+      schema:
+        type: string
+    Filetype:
+      in: query
+      name: filetype
+      description: The file types for file filtering (one at a time).
+      schema:
+        type: string
+    SortDirection:
+      in: query
+      name: sortDirection
+      schema:
+        type: string
+        enum:
+          - ASC
+          - DESC
+  schemas:
+    Asset:
+      type: object
+      description: Represents an asset.
+      properties:
+        id:
+          type: string
+          description: Unique file identifier.
+        filename:
+          type: string
+          description: Name of the asset.
+        contentType:
+          type: string
+          description: The file type.
+        url:
+          type: string
+          description: The URL of the uploaded/published asset.
+        size:
+          type: integer
+          description: The actual file size.
+        uploadDate:
+          type: string
+          description: The date & time the file was uploaded.
+    AssetFileUploadRequest:
+      type: object
+      description: Represents a file upload request.
+      properties:
+        filename:
+          type: string
+          format: string
+          example: img.png
+          description: The filename associated to the asset being uploaded.
+        encodedFile:
+          type: string
+          format: byte
+          description: The actual file to be uploaded.
+        contentType:
+          type: string
+          description: The filetype according to the MIME type (IANA) definition.
+    AssetFileUploadResponse:
+      type: object
+      description: Represents a file upload response.
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the requested file upload.
