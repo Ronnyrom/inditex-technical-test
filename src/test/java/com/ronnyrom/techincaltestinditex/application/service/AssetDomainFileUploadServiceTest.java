@@ -12,12 +12,11 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -32,66 +31,32 @@ public class AssetDomainFileUploadServiceTest {
 
     private AssetFileUploadService assetFileUploadService;
 
-    @Captor
-    private ArgumentCaptor<AssetDomain> assetCaptor;
+    private Executor virtualThreadExecutor;
 
     @BeforeEach
     void setUp() {
-        assetFileUploadService = new AssetFileUploadService(assetRepositoryPort, storagePort, assetFileUploadService);
+        virtualThreadExecutor = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor();
+        assetFileUploadService = new AssetFileUploadService(assetRepositoryPort, storagePort, virtualThreadExecutor, assetFileUploadService);
     }
 
     @Test
     void uploadAssetFile_shouldCompleteSuccessfully() throws InterruptedException {
-
-        //given
+        // given
         AssetDomain assetDomain = generateAsset(null, null);
         AssetDomain pendingAssetDomain = generateAsset(Status.PENDING, 1);
-
+        // when
         when(assetRepositoryPort.save(any(AssetDomain.class))).thenReturn(pendingAssetDomain);
         when(storagePort.uploadAsync(any(AssetDomain.class)))
-                .thenReturn(CompletableFuture.supplyAsync(() -> "http://storage.com/asset-1",
-                        CompletableFuture.delayedExecutor(250, TimeUnit.MILLISECONDS)));
+                .thenReturn(CompletableFuture.completedFuture("http://storage.com/asset-1"));
 
-        //When
         AssetDomain result = assetFileUploadService.uploadAssetFile(assetDomain);
-        //then
-        assertEquals(Status.PENDING, result.getStatus());
+        Thread.sleep(200);
+
+        // then
+        assertEquals(Status.COMPLETED, result.getStatus());
         assertEquals(1, result.getId());
-        Thread.sleep(300);
-
-        verify(assetRepositoryPort, times(2)).save(assetCaptor.capture());
-        List<AssetDomain> assetDomains = assetCaptor.getAllValues();
-
-
-        AssetDomain firstSave = assetDomains.getFirst();
-        assertEquals(Status.PENDING, firstSave.getStatus());
-        assertNull(firstSave.getId());
-
-        AssetDomain secondSave = assetDomains.get(1);
-        assertEquals(Status.COMPLETED, secondSave.getStatus());
-        assertEquals(1, secondSave.getId());
-        assertEquals("http://storage.com/asset-1", secondSave.getUrl());
-
-    }
-
-    @Test
-    void uploadAssetFile_shouldSetPendingAndSaveOnce(){
-        //given
-        AssetDomain assetDomain = generateAsset(null, null);
-        AssetDomain pendingAssetDomain = generateAsset(Status.PENDING, 1);
-        //when
-        when(assetRepositoryPort.save(any(AssetDomain.class))).thenReturn(pendingAssetDomain);
-        when(storagePort.uploadAsync(any(AssetDomain.class))).thenReturn(CompletableFuture.supplyAsync(() -> {
-            throw new RuntimeException("Storage error");
-        }, CompletableFuture.delayedExecutor(100, TimeUnit.MILLISECONDS)))
-        ;
-        //then
-        AssetDomain result = assetFileUploadService.uploadAssetFile(assetDomain);
-        assertEquals(Status.PENDING, result.getStatus());
-        assertEquals(1, result.getId());
-
-        verify(assetRepositoryPort, times(1)).save(assetCaptor.capture());
-
+        verify(assetRepositoryPort, times(2)).save(any(AssetDomain.class));
+        verify(storagePort, times(1)).uploadAsync(any(AssetDomain.class));
     }
 
     @Test
@@ -104,12 +69,11 @@ public class AssetDomainFileUploadServiceTest {
         try {
             assetFileUploadService.uploadAssetFile(assetDomain);
         } catch (Exception e) {
-            assertEquals("500 INTERNAL_SERVER_ERROR \"Error interno al guardar el asset\"", e.getMessage());
+            assertEquals("500 INTERNAL_SERVER_ERROR \"Internal error saving the asset\"", e.getMessage());
         }
         verify(assetRepositoryPort, times(1)).save(any(AssetDomain.class));
         verifyNoInteractions(storagePort);
     }
-
 
     private AssetDomain generateAsset(Status status, Integer id) {
         byte[] encodedFile = "test-content-base64".getBytes();

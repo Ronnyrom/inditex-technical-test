@@ -8,6 +8,7 @@ import com.ronnyrom.techincaltestinditex.adapter.in.web.AssetController;
 import com.ronnyrom.techincaltestinditex.adapter.in.web.mapper.AssetFileUploadMapper;
 import com.ronnyrom.techincaltestinditex.adapter.in.web.mapper.AssetGetByFilterMapper;
 import com.ronnyrom.techincaltestinditex.adapter.in.web.validation.AssetFilterValidator;
+import com.ronnyrom.techincaltestinditex.adapter.in.web.validation.AssetUploadValidator;
 import com.ronnyrom.techincaltestinditex.application.port.in.AssetFileUploadUseCase;
 import com.ronnyrom.techincaltestinditex.application.port.in.AssetGetByFilterUseCase;
 import com.ronnyrom.techincaltestinditex.domain.model.AssetDomain;
@@ -43,22 +44,56 @@ public class AssetControllerTest {
 
     @TestConfiguration
     static class MockConfig {
-        @Bean AssetFileUploadUseCase assetFileUploadUseCase() { return Mockito.mock(AssetFileUploadUseCase.class); }
-        @Bean AssetGetByFilterUseCase assetGetByFilterUseCase() { return Mockito.mock(AssetGetByFilterUseCase.class); }
-        @Bean AssetFileUploadMapper assetFileUploadMapper() { return Mockito.mock(AssetFileUploadMapper.class); }
-        @Bean AssetGetByFilterMapper assetGetByFilterMapper() { return Mockito.mock(AssetGetByFilterMapper.class); }
-        @Bean AssetFilterValidator assetFilterValidator() { return Mockito.mock(AssetFilterValidator.class); }
+        @Bean
+        AssetFileUploadUseCase assetFileUploadUseCase() {
+            return Mockito.mock(AssetFileUploadUseCase.class);
+        }
+
+        @Bean
+        AssetGetByFilterUseCase assetGetByFilterUseCase() {
+            return Mockito.mock(AssetGetByFilterUseCase.class);
+        }
+
+        @Bean
+        AssetFileUploadMapper assetFileUploadMapper() {
+            return Mockito.mock(AssetFileUploadMapper.class);
+        }
+
+        @Bean
+        AssetGetByFilterMapper assetGetByFilterMapper() {
+            return Mockito.mock(AssetGetByFilterMapper.class);
+        }
+
+        @Bean
+        AssetFilterValidator assetFilterValidator() {
+            return Mockito.mock(AssetFilterValidator.class);
+        }
+
+        @Bean
+        AssetUploadValidator assetUploadValidator() {
+            return Mockito.mock(AssetUploadValidator.class);
+        } // <-- nuevo bean
+
     }
-    @Autowired private AssetFileUploadUseCase assetFileUploadUseCase;
-    @Autowired private AssetFileUploadMapper assetFileUploadMapper;
-    @Autowired private AssetGetByFilterMapper assetGetByFilterMapper;
-    @Autowired private AssetGetByFilterUseCase assetGetByFilterUseCase;
-    @Autowired private AssetFilterValidator validator;
+
+    @Autowired
+    private AssetFileUploadUseCase assetFileUploadUseCase;
+    @Autowired
+    private AssetFileUploadMapper assetFileUploadMapper;
+    @Autowired
+    private AssetGetByFilterMapper assetGetByFilterMapper;
+    @Autowired
+    private AssetGetByFilterUseCase assetGetByFilterUseCase;
+    @Autowired
+    private AssetFilterValidator validator;
+    @Autowired
+    private AssetUploadValidator assetUploadValidator;
 
     @AfterEach
     void tearDown() {
-        reset(assetFileUploadUseCase, assetGetByFilterUseCase, assetFileUploadMapper, assetGetByFilterMapper, validator);
+        reset(assetFileUploadUseCase, assetGetByFilterUseCase, assetFileUploadMapper, assetGetByFilterMapper, validator, assetUploadValidator);
     }
+
     @Test
     void uploadAssetFile_returnsAcceptedAndBody() throws Exception {
         AssetFileUploadRequest request = new AssetFileUploadRequest()
@@ -141,7 +176,7 @@ public class AssetControllerTest {
 
         when(assetFileUploadMapper.toDomain(any())).thenReturn(AssetDomain.builder().build());
         when(assetFileUploadUseCase.uploadAssetFile(any()))
-                .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "Error interno al guardar el asset"));
+                .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "Internal error saving the asset"));
 
         mockMvc.perform(post("/api/mgmt/1/assets/actions/upload")
                         .contentType(MediaType.APPLICATION_JSON)

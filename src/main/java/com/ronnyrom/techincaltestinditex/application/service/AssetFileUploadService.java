@@ -16,6 +16,7 @@ import io.github.resilience4j.retry.annotation.Retry;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 
 @Service
 public class AssetFileUploadService implements AssetFileUploadUseCase {
@@ -24,46 +25,28 @@ public class AssetFileUploadService implements AssetFileUploadUseCase {
 
     private final AssetRepositoryPort assetRepositoryPort;
     private final StoragePort storagePort;
-
-    // Proxy del propio bean para evitar auto-invocación
+    private final Executor virtualThreadExecutor;
     private final AssetFileUploadService self;
 
     public AssetFileUploadService(AssetRepositoryPort assetRepositoryPort, StoragePort storagePort,
+                                  Executor virtualThreadExecutor,
                                   @Lazy AssetFileUploadService self) {
         this.assetRepositoryPort = assetRepositoryPort;
         this.storagePort = storagePort;
+        this.virtualThreadExecutor = virtualThreadExecutor;
         this.self = (self != null) ? self : this;
     }
 
     @Override
-
     public AssetDomain uploadAssetFile(AssetDomain assetDomain) {
         try {
             assetDomain.setStatus(Status.PENDING);
             AssetDomain saved = assetRepositoryPort.save(assetDomain);
-            //uploadAsyncWithResilience(saved);
             self.uploadAsyncWithResilience(saved);
-//            storagePort.uploadAsync(saved).whenComplete((url, throwable) -> {
-//                try {
-//                    if (throwable == null && url != null && !url.isEmpty()) {
-//                        log.debug("Processing completed assed upload storage with url {}", url);
-//                        saved.setStatus(Status.COMPLETED);
-//                        saved.setUrl(url);
-//                    } else {
-//                        log.error("Error processing upload storage with url {}", url, throwable);
-//                        saved.setStatus(Status.FAILED);
-//                    }
-//                    assetRepositoryPort.save(saved);
-//
-//                } catch (Exception e) {
-//                    log.error("Error processing upload storage with id {}", saved.getId());
-//                }
-//            });
-
             return saved;
         } catch (Exception e) {
-            log.error("Error en uploadAssetFile", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno al guardar el asset");
+            log.error("Error in uploadAssetFile", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal error saving the asset");
         }
     }
 
@@ -71,20 +54,18 @@ public class AssetFileUploadService implements AssetFileUploadUseCase {
     @Retry(name = "storageService")
     public CompletionStage<Void> uploadAsyncWithResilience(AssetDomain saved) {
         return storagePort.uploadAsync(saved)
-                .thenApply(url -> {
+                .thenApplyAsync(url  -> {
                     if (url == null || url.isBlank()) {
-                        throw new IllegalStateException("URL devuelta por storage vacía");
+                        throw new IllegalStateException("URL from storage is empty");
                     }
                     log.debug("Processing completed asset upload storage with url {}", url);
                     saved.setStatus(Status.COMPLETED);
                     saved.setUrl(url);
                     assetRepositoryPort.save(saved);
                     return null;
-                });
-        // No usar whenComplete/exceptionally: dejar propagar el fallo para Retry/CircuitBreaker
+                }, virtualThreadExecutor);
     }
-    // Fallback: misma firma (parámetros + Throwable) y mismo tipo de retorno
-    @SuppressWarnings("unused")
+
     private CompletionStage<Void> storageFallback(AssetDomain assetDomain, Throwable t) {
         log.error("Storage service fallback triggered for asset {}", assetDomain.getId(), t);
         assetDomain.setStatus(Status.FAILED);

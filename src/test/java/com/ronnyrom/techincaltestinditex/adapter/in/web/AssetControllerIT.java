@@ -6,6 +6,7 @@ import com.ronnyrom.adapter.in.web.model.AssetFileUploadResponse;
 import com.ronnyrom.techincaltestinditex.adapter.out.persistence.entity.AssetEntity;
 import com.ronnyrom.techincaltestinditex.application.port.out.StoragePort;
 import com.ronnyrom.techincaltestinditex.repository.UploadRepository;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.Matchers.is;
@@ -42,11 +44,15 @@ public class AssetControllerIT {
     @TestConfiguration
     static class TestBeans {
         private static final AtomicBoolean shouldFail = new AtomicBoolean(false);
+        static final AtomicInteger invocations = new AtomicInteger(0);
 
         public static void setShouldFail(boolean value) {
             shouldFail.set(value);
         }
-
+        public static void resetCounters() {
+            shouldFail.set(false);
+            invocations.set(0);
+        }
         @Bean
         @Primary
         StoragePort storagePort() {
@@ -69,6 +75,8 @@ public class AssetControllerIT {
     private ObjectMapper objectMapper;
     @Autowired
     private UploadRepository uploadRepository;
+    @Autowired
+    private CircuitBreakerRegistry circuitBreakerRegistry;
 
     @Test
     void uploadAssetFile_202_and_persists_completed() throws Exception {
@@ -482,5 +490,36 @@ public class AssetControllerIT {
             assertNull(e.getUrl());
         });
     }
+    @Test
+    void uploadAssetFile_circuitBreaker_open_short_circuits_and_uses_fallback() throws Exception {
+        TestBeans.resetCounters();
+        var cb = circuitBreakerRegistry.circuitBreaker("storageService");
+        cb.transitionToOpenState();
+        int before = TestBeans.invocations.get();
 
+        AssetFileUploadRequest req = new AssetFileUploadRequest()
+                .filename("photo.jpg")
+                .contentType("image/jpg")
+                .encodedFile("encoded-file-sample".getBytes());
+
+        String content = mockMvc.perform(post("/api/mgmt/1/assets/actions/upload")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isAccepted())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        AssetFileUploadResponse resp = objectMapper.readValue(content, AssetFileUploadResponse.class);
+        Integer id = Integer.valueOf(resp.getId());
+
+
+        assertEquals(before, TestBeans.invocations.get(), "CircuitBreaker OPEN dont call to StoragePort");
+
+        Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
+            AssetEntity e = uploadRepository.findById(id).orElseThrow();
+            assertEquals("FAILED", e.getStatus());
+            assertNull(e.getUrl());
+        });
+    }
 }

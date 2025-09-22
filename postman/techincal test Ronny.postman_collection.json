@@ -1,0 +1,117 @@
+{
+	"info": {
+		"_postman_id": "e7dab46f-b986-470e-b4bd-391578e2ad86",
+		"name": "techincal test Ronny",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12344270"
+	},
+	"item": [
+		{
+			"name": "upload",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"filename\": \"img.png\",\r\n  \"encodedFile\": \"/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxISEhUQEhUVFhUVFRUVFRUVFRUVFRUWFxUVFRUYHSggGBolGxUVITEhJSkrLi4uFx8zODMtNygtLisBCgoKDg0OGxAQGy0lHyUtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLf/AABEIAKAAoAMBIgACEQEDEQH/xAAbAAABBQEBAAAAAAAAAAAAAAAGAAEDBAUCB//EAD4QAAEDAgMFBQYGAwAAAAAAAAEAAhEDIQQSMUFRBWFxgZGh8BMUIoGxwdHh8SNSYnKCkuLxM3PS/8QAGAEBAQEBAQAAAAAAAAAAAAAAAwIBBAX/xAAkEQEBAAIDAQACAwEAAAAAAAAAAQIRAxIhMUFRBCKRcf/aAAwDAQACEQMRAD8A8aKKK+VQooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//Z\",\r\n\"contentType\": \"string\"\r\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/mgmt/1/assets/actions/upload",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"mgmt",
+						"1",
+						"assets",
+						"actions",
+						"upload"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get by filter",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/mgmt/1/assets/?filename=IMG.png&filetype=image/jpeg&uploadDateEnd=2026-09-20T00:00:00&uploadDateStart=2024-09-17T00:00:00&sortDirection=DESC",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"mgmt",
+						"1",
+						"assets",
+						""
+					],
+					"query": [
+						{
+							"key": "filename",
+							"value": "IMG.png"
+						},
+						{
+							"key": "filetype",
+							"value": "image/jpeg"
+						},
+						{
+							"key": "uploadDateEnd",
+							"value": "2026-09-20T00:00:00"
+						},
+						{
+							"key": "uploadDateStart",
+							"value": "2024-09-17T00:00:00"
+						},
+						{
+							"key": "sortDirection",
+							"value": "DESC"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
