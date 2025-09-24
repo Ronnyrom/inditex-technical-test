@@ -1,35 +1,31 @@
-package com.ronnyrom.techincaltestinditex.adapter.out.persistence.mapper;
+package com.ronnyrom.techincaltestinditex.adapter.out.r2dbc.mapper;
 
-import com.ronnyrom.techincaltestinditex.adapter.out.persistence.entity.AssetEntity;
+import com.ronnyrom.techincaltestinditex.adapter.out.r2dbc.entity.AssetEntity;
 import com.ronnyrom.techincaltestinditex.domain.model.AssetDomain;
 import com.ronnyrom.techincaltestinditex.domain.model.Status;
-import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-
-@Component
-public class AssetMapper {
-    public AssetEntity toAssetEntity(AssetDomain assetDomain) {
+public class AssetR2dbcMapper {
+    public AssetEntity toEntity(AssetDomain assetDomain) {
         return AssetEntity.builder()
                 .id(assetDomain.getId())
                 .filename(assetDomain.getFilename())
                 .contentType(assetDomain.getContentType())
                 .url(assetDomain.getUrl())
                 .size(assetDomain.getSize())
-                .status(assetDomain.getStatus().name())
-                .uploadDate(LocalDateTime.now())
+                .uploadDate(assetDomain.getUploadDate())
+                .status(assetDomain.getStatus() != null ? assetDomain.getStatus().name() : null)
                 .build();
     }
 
-    public AssetDomain toAsset(AssetEntity assetEntity) {
+    public AssetDomain toDomain(AssetEntity assetEntity) {
         return AssetDomain.builder()
                 .id(assetEntity.getId())
                 .filename(assetEntity.getFilename())
                 .contentType(assetEntity.getContentType())
                 .url(assetEntity.getUrl())
                 .size(assetEntity.getSize())
-                .status(Status.valueOf(assetEntity.getStatus()))
                 .uploadDate(assetEntity.getUploadDate())
+                .status(assetEntity.getStatus() != null ? Status.valueOf(assetEntity.getStatus()) : null)
                 .build();
     }
 }

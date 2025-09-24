@@ -1,47 +1,23 @@
 package com.ronnyrom.techincaltestinditex.adapter.in.web.validation;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
-import jakarta.validation.Validator;
-import jakarta.validation.ValidatorFactory;
-import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
 import org.springframework.stereotype.Component;
-
-import java.util.Set;
 
 @Component
 public class AssetUploadValidator {
-    private final Validator validator;
 
-    public AssetUploadValidator() {
-        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-        this.validator = factory.getValidator();
-    }
+    public record AssetFileUploadParams(String filename, String encodedFile, String contentType) {}
 
-    public void validate(AssetFileUploadRequest request) {
-        Set<ConstraintViolation<AssetFileUploadRequest>> violations = validator.validate(request);
-        if (!violations.isEmpty()) {
-            throw new IllegalArgumentException(violations.iterator().next().getMessage());
-        }
-        if (request.getFilename().contains("..") || request.getFilename().contains("/") || request.getFilename().contains("\\")) {
+    public void validate(AssetFileUploadParams params) {
+        if (params == null) throw new IllegalArgumentException("Request cannot be null");
+
+        if (params.filename() == null || params.filename().isBlank())
+            throw new IllegalArgumentException("Filename cannot be null or empty");
+        if (params.encodedFile() == null || params.encodedFile().isBlank())
+            throw new IllegalArgumentException("EncodedFile cannot be null or empty");
+        if (params.contentType() == null || params.contentType().isBlank())
+            throw new IllegalArgumentException("ContentType cannot be null or empty");
+
+        if (params.filename().contains("..") || params.filename().contains("/") || params.filename().contains("\\"))
             throw new IllegalArgumentException("Nombre de archivo no válido");
-        }
-
-    }
-    @Getter
-    public static class AssetFileUploadRequest {
-        @NotBlank(message = "Filename cannot be null or empty")
-        private final String filename;
-        @NotBlank(message = "EncodedFile cannot be null or empty")
-        private final String encodedFile;
-        @NotBlank(message = "ContentType cannot be null or empty")
-        private final String contentType;
-
-        public AssetFileUploadRequest(String filename, String encodedFile, String contentType) {
-            this.filename = filename;
-            this.encodedFile = encodedFile;
-            this.contentType = contentType;
-        }
     }
 }

@@ -19,4 +19,8 @@ spring:
       path: /h2-console
   sql:
     init:
-      enabled: false
+      enabled: true
+      schema-locations: classpath:schema.sql
+  jwt:
+    secret: U3VwZXJMb25nU2VjcmV0S2V5Rm9ySlNXVGVzdGluZ1dpdGhFeHRyYVNlY3VyaXR5MTIzNDU2Nzg5MA==
+    expiration-ms: 3600000

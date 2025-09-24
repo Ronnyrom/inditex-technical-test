@@ -1,4 +1,4 @@
-INSERT INTO ASSETS (filename, content_type, url, size, status, upload_date)
-VALUES ('ejemplo.jpg', 'image/jpeg', null, 102400,'PENDING','2025-09-19 10:30:00');
-INSERT INTO ASSETS (filename, content_type, url, size, status, upload_date)
-VALUES ('antiguo.png', 'image/png', 'http://localhost/assetDomains/antiguo.png', 204800,'COMPLETED', '2024-05-01 10:30:00');
+-- INSERT INTO ASSETS (filename, content_type, url, size, status, upload_date)
+-- VALUES ('ejemplo.jpg', 'image/jpeg', null, 102400,'PENDING','2025-09-19 10:30:00');
+-- INSERT INTO ASSETS (filename, content_type, url, size, status, upload_date)
+-- VALUES ('antiguo.png', 'image/png', 'http://localhost/assetDomains/antiguo.png', 204800,'COMPLETED', '2024-05-01 10:30:00');

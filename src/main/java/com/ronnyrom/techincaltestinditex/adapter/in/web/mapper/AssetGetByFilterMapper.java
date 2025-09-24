@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 @Component
 public class AssetGetByFilterMapper {
+
     public AssetFilter toAssetFilter(String uploadDateStart, String uploadDateEnd, String filename, String filetype, String sortDirection) {
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
         return AssetFilter.builder()
@@ -19,17 +19,17 @@ public class AssetGetByFilterMapper {
                 .uploadDateEnd(uploadDateEnd != null && !uploadDateEnd.isBlank() ? LocalDateTime.parse(uploadDateEnd, formatter) : null)
                 .filename(filename)
                 .filetype(filetype)
-                .sortDirection(sortDirection != null ? SortDirection.valueOf(sortDirection) : null)
+                .sortDirection(sortDirection != null && !sortDirection.isBlank() ? SortDirection.valueOf(sortDirection) : null)
                 .build();
     }
-    public List<Asset> toResponse(List<AssetDomain> assetDomains) {
-        return assetDomains.stream().map(assetDomain -> new Asset()
-                .id(assetDomain.getId().toString())
+
+    public Asset toResponse(AssetDomain assetDomain) {
+        return new Asset()
+                .id(assetDomain.getId() != null ? assetDomain.getId().toString() : null)
                 .filename(assetDomain.getFilename())
                 .contentType(assetDomain.getContentType())
                 .url(assetDomain.getUrl())
                 .size(assetDomain.getSize())
-                .uploadDate(assetDomain.getUploadDate().toString())
-        ).toList();
+                .uploadDate(assetDomain.getUploadDate() != null ? assetDomain.getUploadDate().toString() : null);
     }
 }
